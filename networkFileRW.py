@@ -4,18 +4,26 @@
 #Thursday, March 3, 2022
 #Update routers and switches;
 #read equipment from a file, write updates & errors to file
+#
+#GPA 8 Modifications:
+# - Added try/except clause for importing the JSON module
+# - Added file constants for input files (equip_r.txt, equip_s.txt)
+#   and output files (updated.txt, invalid.txt)
+# - Used json.load() to read router and switch data from files into dictionaries
+# - Used json.dump() to write updated device dictionary to updated.txt
+# - Used json.dump() to write invalid IP address list to invalid.txt
 
-##---->>>> Use a try/except clause to import the JSON module
+try:
+    import json
+except ImportError:
+    print("Error: JSON module could not be imported.")
+    raise
 
-
-
-##---->>>> Create file constants for the file names; file constants can be reused
-##         There are 2 files to read this program: equip_r.txt and equip_s.txt
-##         There are 2 files to write in this program: updated.txt and errors.txt
-      
-
-
-
+# File constants
+ROUTERS_FILE = "equip_r.txt"
+SWITCHES_FILE = "equip_s.txt"
+UPDATED_FILE = "updated.txt"
+ERRORS_FILE = "invalid.txt"
 
 #prompt constants
 UPDATE = "\nWhich device would you like to update "
@@ -44,7 +52,6 @@ def getValidIP(invalidIPCount, invalidIPAddresses):
     while not validIP:
         ipAddress = input(NEW_IP)
         octets = ipAddress.split('.')
-        #print("octets", octets)
         for byte in octets:
             byte = int(byte)
             if byte < 0 or byte > 255:
@@ -53,27 +60,17 @@ def getValidIP(invalidIPCount, invalidIPAddresses):
                 print(SORRY)
                 break
         else:
-            #validIP = True
-                return ipAddress, invalidIPCount
-                #don't need to return invalidIPAddresses list - it's an object
+            return ipAddress, invalidIPCount
         
 def main():
 
-    ##---->>>> open files here
+    # Open and read router file
+    with open(ROUTERS_FILE, 'r') as rFile:
+        routers = json.load(rFile)
 
-
-
-    
-    #dictionaries
-    ##---->>>> read the routers and addresses into the router dictionary
-
-    routers = {}
-
-
-    ##---->>>> read the switches and addresses into the switches dictionary
-
-    switches = {}
-
+    # Open and read switch file
+    with open(SWITCHES_FILE, 'r') as sFile:
+        switches = json.load(sFile)
 
     #the updated dictionary holds the device name and new ip address
     updated = {}
@@ -106,46 +103,37 @@ def main():
             break
         
         #function call to get valid IP address
-        #python lets you return two or more values at one time
         ipAddress, invalidIPCount = getValidIP(invalidIPCount, invalidIPAddresses)
   
         #update device
         if 'r' in device:
-            #modify the value associated with the key
             routers[device] = ipAddress 
-            #print("routers", routers)
-            
         else:
             switches[device] = ipAddress
 
         devicesUpdatedCount += 1
-        #add the device and ipAddress to the dictionary
         updated[device] = ipAddress
 
         print(device, "was updated; the new IP address is", ipAddress)
-        #loop back to the beginning
 
     #user finished updating devices
     print("\nSummary:")
     print()
     print("Number of devices updated:", devicesUpdatedCount)
 
-    ##---->>>> write the updated equipment dictionary to a file
-
-    
+    # Write updated dictionary to file
+    with open(UPDATED_FILE, 'w') as uFile:
+        json.dump(updated, uFile)
     print("Updated equipment written to file 'updated.txt'")
+
     print()
     print("\nNumber of invalid addresses attempted:", invalidIPCount)
 
-    ##---->>>> write the list of invalid addresses to a file
-    
-
-    print("List of invalid addresses written to file 'errors.txt'")
+    # Write invalid IP list to file
+    with open(ERRORS_FILE, 'w') as eFile:
+        json.dump(invalidIPAddresses, eFile)
+    print("List of invalid addresses written to file 'invalid.txt'")
 
 #top-level scope check
 if __name__ == "__main__":
     main()
-
-
-
-
